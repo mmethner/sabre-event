@@ -14,43 +14,60 @@ use Throwable;
  * @license http://sabre.io/license/ Modified BSD License
  */
 
+/**
+ * @param iterable $iterable
+ * @return \Iterator
+ */
+function toIterator($iterable): \Iterator {
+    
+}
+
+
 
 /**
- * This function takes an array of Promises, and returns a Promise that
+ * This function takes an iterable of Promises, and returns a Promise that
  * resolves when all of the given arguments have resolved.
  *
  * The returned Promise will resolve with a value that's an array of all the
  * values the given promises have been resolved with.
  *
- * This array will be in the exact same order as the array of input promises.
+ * This array will have the exact same keys of the iterable of input promises.
  *
  * If any of the given Promises fails, the returned promise will immidiately
  * fail with the first Promise that fails, and its reason.
  *
- * @param Promise[] $promises
+ * @param iterable $promises iterable (array or Traversable) of Promises
  */
-function all(array $promises) : Promise {
+function all($promises) : Promise {
 
     return new Promise(function($success, $fail) use ($promises) {
+        if (\is_array($iterable)) {
+            $iterable = new \ArrayIterator($iterable);
+        } else if ($iterable instanceof \IteratorAggregate) {
+            $iterable = $iterable->getIterator();
+        } else if (!($iterable instanceof \Iterator)) {
+            throw new \InvalidArgumentException('Not an iterable');
+        }
 
-        if (empty($promises)) {
+        $promises->rewind();
+        if (!$promises->valid()) {
             $success([]);
             return;
         }
 
         $successCount = 0;
+        $totalCount = 0;
         $completeResult = [];
 
-        foreach ($promises as $promiseIndex => $subPromise) {
-
-            $subPromise->then(
-                function($result) use ($promiseIndex, &$completeResult, &$successCount, $success, $promises) {
-                    $completeResult[$promiseIndex] = $result;
+        while ($promises->valid()) {
+            $totalCount++;
+            $promises->current()->then(
+                function($result) use ($promiseIndex, &$completeResult, &$successCount, &$totalCount, $success, $promises) {
+                    $completeResult[$promises->key()] = $result;
                     $successCount++;
-                    if ($successCount === count($promises)) {
+                    if ($successCount === $totalCount) {
                         $success($completeResult);
                     }
-                    return $result;
                 }
             )->otherwise(
                 function($reason) use ($fail) {
@@ -70,9 +87,9 @@ function all(array $promises) : Promise {
  * The returned promise will resolve or reject with the value or reason of
  * that first promise.
  *
- * @param Promise[] $promises
+ * @param iterable $promises An iterable (array or Traversable) of promises
  */
-function race(array $promises) : Promise {
+function race($promises) : Promise {
 
     return new Promise(function($success, $fail) use ($promises) {
 
