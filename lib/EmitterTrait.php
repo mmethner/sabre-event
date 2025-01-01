@@ -79,7 +79,7 @@ trait EmitterTrait {
      * Lastly, if there are 5 event handlers for an event. The continueCallback
      * will be called at most 4 times.
      */
-    function emit(string $eventName, array $arguments = [], callable $continueCallBack = null) : bool {
+    function emit(string $eventName, array $arguments = [], ?callable $continueCallBack = null) : bool {
 
         if (is_null($continueCallBack)) {
 
@@ -175,7 +175,7 @@ trait EmitterTrait {
      *
      * @return void
      */
-    function removeAllListeners(string $eventName = null) {
+    function removeAllListeners(?string $eventName = null) {
 
         if (!is_null($eventName)) {
             unset($this->listeners[$eventName]);
